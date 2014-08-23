@@ -1,41 +1,33 @@
-<!doctype html>
-<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
-<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
 
-  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen">
-  <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-  <script type="text/javascript" src="javascripts/script.js"></script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
 
-  <title>Machinelearning</title>
-  <meta name="description" content="Practical Machine Learning Project">
+    <title>Machine Learning - Model For Predicting Exercise Quality by ajammala</title>
+  </head>
 
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-
-</head>
-
-<body>
-
-  <div class="wrapper">
+  <body>
     <header>
-      <h1 class="title">Machinelearning</h1>
+      <div class="inner">
+        <h1>Machine Learning - Model For Predicting Exercise Quality</h1>
+        <h2>Practical Machine Learning Project</h2>
+        <a href="https://github.com/ajammala/MachineLearning" class="button"><small>View project on</small>GitHub</a>
+      </div>
     </header>
-    <div id="container">
-      <p class="tagline">Practical Machine Learning Project</p>
-      <div id="main" role="main">
-        <div class="download-bar">
-        <div class="inner">
-          <a href="https://github.com/ajammala/MachineLearning/tarball/master" class="download-button tar"><span>Download</span></a>
-          <a href="https://github.com/ajammala/MachineLearning/zipball/master" class="download-button zip"><span>Download</span></a>
-          <a href="https://github.com/ajammala/MachineLearning" class="code">View Machinelearning on GitHub</a>
-        </div>
-        <span class="blc"></span><span class="trc"></span>
-        </div>
-        <article class="markdown-body">
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
           <h3>
 <a name="model-for-predicting-exercise-quality" class="anchor" href="#model-for-predicting-exercise-quality"><span class="octicon octicon-link"></span></a>Model For Predicting Exercise Quality</h3>
 
@@ -62,10 +54,10 @@ if (!file.exists("./pml-testing.csv")) {
 
 <p>Reading the data into a data frame. </p>
 
-<div class="highlight highlight-r"><pre>input_data <span class="o">&lt;-</span> read.csv<span class="p">(</span><span class="s">"./pml-training.csv"</span><span class="p">)</span>
-test_data <span class="o">&lt;-</span> read.csv<span class="p">(</span><span class="s">"./pml-testing.csv"</span><span class="p">)</span>
-str<span class="p">(</span>input_data<span class="p">)</span>
-</pre></div>
+<pre><code>input_data &lt;- read.csv("./pml-training.csv")
+test_data &lt;- read.csv("./pml-testing.csv")
+str(input_data)
+</code></pre>
 
 <h5>
 <a name="22-working-with-missing-values" class="anchor" href="#22-working-with-missing-values"><span class="octicon octicon-link"></span></a>2.2 Working With Missing Values</h5>
@@ -89,6 +81,26 @@ input_data &lt;- input_data[, - which(as.numeric(colSums(is.na(input_data))) &gt
 <pre><code>input_data &lt;- input_data[, -c(1:7)]
 dim(input_data)
 names(input_data)
+</code></pre>
+
+<pre><code>##  [1] "roll_belt"            "pitch_belt"           "yaw_belt"            
+##  [4] "total_accel_belt"     "gyros_belt_x"         "gyros_belt_y"        
+##  [7] "gyros_belt_z"         "accel_belt_x"         "accel_belt_y"        
+## [10] "accel_belt_z"         "magnet_belt_x"        "magnet_belt_y"       
+## [13] "magnet_belt_z"        "roll_arm"             "pitch_arm"           
+## [16] "yaw_arm"              "total_accel_arm"      "gyros_arm_x"         
+## [19] "gyros_arm_y"          "gyros_arm_z"          "accel_arm_x"         
+## [22] "accel_arm_y"          "accel_arm_z"          "magnet_arm_x"        
+## [25] "magnet_arm_y"         "magnet_arm_z"         "roll_dumbbell"       
+## [28] "pitch_dumbbell"       "yaw_dumbbell"         "total_accel_dumbbell"
+## [31] "gyros_dumbbell_x"     "gyros_dumbbell_y"     "gyros_dumbbell_z"    
+## [34] "accel_dumbbell_x"     "accel_dumbbell_y"     "accel_dumbbell_z"    
+## [37] "magnet_dumbbell_x"    "magnet_dumbbell_y"    "magnet_dumbbell_z"   
+## [40] "roll_forearm"         "pitch_forearm"        "yaw_forearm"         
+## [43] "total_accel_forearm"  "gyros_forearm_x"      "gyros_forearm_y"     
+## [46] "gyros_forearm_z"      "accel_forearm_x"      "accel_forearm_y"     
+## [49] "accel_forearm_z"      "magnet_forearm_x"     "magnet_forearm_y"    
+## [52] "magnet_forearm_z"     "classe"
 </code></pre>
 
 <h4>
@@ -137,9 +149,59 @@ model_rf = randomForest(training$classe~., data=pca_train, ntree = 2048)
 model_rf
 </code></pre>
 
+<pre><code>## 
+## Call:
+##  randomForest(formula = training$classe ~ ., data = pca_train,      ntree = 2048) 
+##                Type of random forest: classification
+##                      Number of trees: 2048
+## No. of variables tried at each split: 6
+## 
+##         OOB estimate of  error rate: 1.99%
+## Confusion matrix:
+##      A    B    C    D    E class.error
+## A 3898    4    1    2    1    0.002048
+## B   48 2580   23    2    5    0.029345
+## C    4   31 2342   17    2    0.022538
+## D    3    0   86 2155    8    0.043073
+## E    4   10   14    8 2489    0.014257
+</code></pre>
+
 <p>Using cross validation, the accuracy of the model can be checked. </p>
 
 <pre><code>confusionMatrix(validation$classe, predict(model_rf, pca_validation))
+</code></pre>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1667    5    0    0    2
+##          B   20 1104   13    1    1
+##          C    1   12 1006    7    0
+##          D    1    1   26  932    4
+##          E    0    1    8    2 1071
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.982         
+##                  95% CI : (0.978, 0.985)
+##     No Information Rate : 0.287         
+##     P-Value [Acc &gt; NIR] : &lt; 2e-16       
+##                                         
+##                   Kappa : 0.977         
+##  Mcnemar's Test P-Value : 0.000312      
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             0.987    0.983    0.955    0.989    0.994
+## Specificity             0.998    0.993    0.996    0.994    0.998
+## Pos Pred Value          0.996    0.969    0.981    0.967    0.990
+## Neg Pred Value          0.995    0.996    0.990    0.998    0.999
+## Prevalence              0.287    0.191    0.179    0.160    0.183
+## Detection Rate          0.283    0.188    0.171    0.158    0.182
+## Detection Prevalence    0.284    0.194    0.174    0.164    0.184
+## Balanced Accuracy       0.993    0.988    0.976    0.991    0.996
 </code></pre>
 
 <p>The model has an accuracy of <code>0.982</code>. </p>
@@ -160,26 +222,25 @@ predicted_results &lt;- predict(model_rf, pca_test)
 <ol>
 <li>Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.</li>
 </ol>
-        </article>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/ajammala/MachineLearning/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/ajammala/MachineLearning/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/ajammala/MachineLearning"></a> is maintained by <a href="https://github.com/ajammala">ajammala</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
       </div>
     </div>
-    <footer>
-      <div class="owner">
-      <p><a href="https://github.com/ajammala" class="avatar"><img src="https://avatars0.githubusercontent.com/u/7338730?v=2&amp;s=60" width="48" height="48"></a> <a href="https://github.com/ajammala">ajammala</a> maintains <a href="https://github.com/ajammala/MachineLearning">Machinelearning</a></p>
-
-
-      </div>
-      <div class="creds">
-        <small>This page generated using <a href="http://pages.github.com/">GitHub Pages</a><br>theme by <a href="https://twitter.com/jonrohan/">Jon Rohan</a></small>
-      </div>
-    </footer>
-  </div>
-  <div class="current-section">
-    <a href="#top">Scroll to top</a>
-    <a href="https://github.com/ajammala/MachineLearning/tarball/master" class="tar">tar</a><a href="https://github.com/ajammala/MachineLearning/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
-    <p class="name"></p>
-  </div>
 
   
-</body>
+  </body>
 </html>
