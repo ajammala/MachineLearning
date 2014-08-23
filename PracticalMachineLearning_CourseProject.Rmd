@@ -1,6 +1,6 @@
 ---
-title: "Model For Predicting Exercise Correctness"
-output: pdf_document
+title: "Model For Predicting Exercise Quality"
+output: html_document
 ---
 
 ####1.0 Summary:
