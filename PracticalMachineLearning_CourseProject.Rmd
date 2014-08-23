@@ -1,0 +1,110 @@
+---
+title: "Model For Predicting Exercise Correctness"
+output: pdf_document
+---
+
+####1.0 Summary:
+In a study, 6 test subjects were asked to perform barbell lifts correctly and incorrectly in 5 different ways while wearing accelerometers on the belt, forearms, arms and the dumbells. The data from accelerometers was recorded. The goal of this project is to build a supervised machine learning model that uses the recorded data to predict the manner in which the exercise was performed on a test data set. 
+
+####2.0 Exploratory Data Analysis
+#####2.1 Downloading The Data
+
+```{r}
+if (!file.exists("./pml-training.csv")) {
+    download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", 
+        destfile = "./pml-training.csv")
+}
+if (!file.exists("./pml-testing.csv")) {
+    download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", 
+        destfile = "./pml-testing.csv")
+}
+```
+
+Reading the data into a data frame. 
+
+```{r results='hide'}
+input_data <- read.csv("./pml-training.csv")
+test_data <- read.csv("./pml-testing.csv")
+str(input_data)
+```
+
+#####2.2 Working With Missing Values
+Now that we have the data in a data frame, it is time to explore the columns in the data set. We know that the data set has 19622 records with 160 columns each. 
+We first try to look at the missing values in the data set.
+```{r}
+df <- colSums(is.na(input_data))
+plot(df, xlab = "Variable Index", ylab="Number of NAs", type='l')
+```
+
+The plot shows us that a lot of fields contain a significant number of NAs (close to 19000 NAs out of 19622 observations). We can remove these values safely because they do not affect the outcome of the experiment.  
+
+```{r}
+input_data <- read.csv("./pml-training.csv", na.strings=c("NA",""))
+input_data <- input_data[, - which(as.numeric(colSums(is.na(input_data))) > 19000)]
+```
+
+The first 7 columns in the data set are `X`, `user_name`, `raw_timestamp_part_1`, `raw_timestamp_part_2`, `cvtd_timestamp`, `new_window` and `num_window`. These are static values and do not directly impact the outcome of the experiment. They can be safely removed from the data set.
+
+```{r}
+input_data <- input_data[, -c(1:7)]
+dim(input_data)
+names(input_data)
+```
+
+####3.0 Feature Selection
+The next step is to select the predictor variables to be used in the model.
+
+#####3.1 Corelated Predictors
+We now check for Corelated predictors in the data set. If two variables are highly correlated they will impart nearly exactly the same information to the regression model. Including both variables will result in a weak model by infusing the model with noise. 
+
+```{r}
+library(caret)
+set.seed(1016)
+in_train <- createDataPartition(input_data$classe, p=0.70, list=FALSE)
+training <- input_data[in_train,]
+validation <- input_data[-in_train,]
+```
+
+The following code examines the correlation coefficient. In this model, the Pearson correlation coefficient was chosen to be 0.99 (Indicating a very high level of correlation)
+```{r}
+M <- abs(cor(training[,-53]))
+diag(M) <- 0
+which(M > 0.99,arr.ind=T)
+```
+
+#####3.2 PCA
+There are variables in the data set which have a high corelation coefficient. PCA can be used to reduce the number of variables. We can set the cutoff for the cumulative percent of variance to be retained by PCA to 0.99.
+```{r}
+preProc=preProcess(training[,-53],method="pca",thresh=.99)
+pca_train=predict(preProc,training[,-53])
+pca_validation <- predict(preProc, validation[-53])
+```
+
+This reduces the number of predictors in the training set from 53 to 36.
+
+####4.0 Predictive Model
+For building the predictive model, we use the Random Forest algorithm. 
+```{r}
+library(randomForest)
+model_rf = randomForest(training$classe~., data=pca_train, ntree = 2048)
+model_rf
+```
+
+Using cross validation, the accuracy of the model can be checked. 
+```{r}
+confusionMatrix(validation$classe, predict(model_rf, pca_validation))
+```
+The model has an accuracy of `0.982`. 
+
+####5.0 Conclusion
+Now that we have a model, we can use it to predict the exercise quality over the test data set. We can do this with the following code.
+
+```{r results='hide'}
+test_data <- test_data[, names(test_data) %in% names(input_data)]
+pca_test <- predict(preProc, test_data)
+predicted_results <- predict(model_rf, pca_test)
+```
+
+####6.0 References
+1. Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6. 
+
