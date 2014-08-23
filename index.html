@@ -1,0 +1,185 @@
+<!doctype html>
+<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen">
+  <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="javascripts/script.js"></script>
+
+  <title>Machinelearning</title>
+  <meta name="description" content="Practical Machine Learning Project">
+
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+</head>
+
+<body>
+
+  <div class="wrapper">
+    <header>
+      <h1 class="title">Machinelearning</h1>
+    </header>
+    <div id="container">
+      <p class="tagline">Practical Machine Learning Project</p>
+      <div id="main" role="main">
+        <div class="download-bar">
+        <div class="inner">
+          <a href="https://github.com/ajammala/MachineLearning/tarball/master" class="download-button tar"><span>Download</span></a>
+          <a href="https://github.com/ajammala/MachineLearning/zipball/master" class="download-button zip"><span>Download</span></a>
+          <a href="https://github.com/ajammala/MachineLearning" class="code">View Machinelearning on GitHub</a>
+        </div>
+        <span class="blc"></span><span class="trc"></span>
+        </div>
+        <article class="markdown-body">
+          <h3>
+<a name="model-for-predicting-exercise-quality" class="anchor" href="#model-for-predicting-exercise-quality"><span class="octicon octicon-link"></span></a>Model For Predicting Exercise Quality</h3>
+
+<h4>
+<a name="10-summary" class="anchor" href="#10-summary"><span class="octicon octicon-link"></span></a>1.0 Summary:</h4>
+
+<p>In a study, 6 test subjects were asked to perform barbell lifts correctly and incorrectly in 5 different ways while wearing accelerometers on the belt, forearms, arms and the dumbells. The data from accelerometers was recorded. The goal of this project is to build a supervised machine learning model that uses the recorded data to predict the manner in which the exercise was performed on a test data set. </p>
+
+<h4>
+<a name="20-exploratory-data-analysis" class="anchor" href="#20-exploratory-data-analysis"><span class="octicon octicon-link"></span></a>2.0 Exploratory Data Analysis</h4>
+
+<h5>
+<a name="21-downloading-the-data" class="anchor" href="#21-downloading-the-data"><span class="octicon octicon-link"></span></a>2.1 Downloading The Data</h5>
+
+<pre><code>if (!file.exists("./pml-training.csv")) {
+    download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", 
+        destfile = "./pml-training.csv")
+}
+if (!file.exists("./pml-testing.csv")) {
+    download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", 
+        destfile = "./pml-testing.csv")
+}
+</code></pre>
+
+<p>Reading the data into a data frame. </p>
+
+<div class="highlight highlight-r"><pre>input_data <span class="o">&lt;-</span> read.csv<span class="p">(</span><span class="s">"./pml-training.csv"</span><span class="p">)</span>
+test_data <span class="o">&lt;-</span> read.csv<span class="p">(</span><span class="s">"./pml-testing.csv"</span><span class="p">)</span>
+str<span class="p">(</span>input_data<span class="p">)</span>
+</pre></div>
+
+<h5>
+<a name="22-working-with-missing-values" class="anchor" href="#22-working-with-missing-values"><span class="octicon octicon-link"></span></a>2.2 Working With Missing Values</h5>
+
+<p>Now that we have the data in a data frame, it is time to explore the columns in the data set. We know that the data set has 19622 records with 160 columns each. 
+We first try to look at the missing values in the data set.</p>
+
+<pre><code>df &lt;- colSums(is.na(input_data))
+plot(df, xlab = "Variable Index", ylab="Number of NAs", type='l')
+</code></pre>
+
+<p><img src="https://raw.githubusercontent.com/ajammala/MachineLearning/master/untitled.png" alt="">
+The plot shows us that a lot of fields contain a significant number of NAs (close to 19000 NAs out of 19622 observations). We can remove these values safely because they do not affect the outcome of the experiment.  </p>
+
+<pre><code>input_data &lt;- read.csv("./pml-training.csv", na.strings=c("NA",""))
+input_data &lt;- input_data[, - which(as.numeric(colSums(is.na(input_data))) &gt; 19000)]
+</code></pre>
+
+<p>The first 7 columns in the data set are <code>X</code>, <code>user_name</code>, <code>raw_timestamp_part_1</code>, <code>raw_timestamp_part_2</code>, <code>cvtd_timestamp</code>, <code>new_window</code> and <code>num_window</code>. These are static values and do not directly impact the outcome of the experiment. They can be safely removed from the data set.</p>
+
+<pre><code>input_data &lt;- input_data[, -c(1:7)]
+dim(input_data)
+names(input_data)
+</code></pre>
+
+<h4>
+<a name="30-feature-selection" class="anchor" href="#30-feature-selection"><span class="octicon octicon-link"></span></a>3.0 Feature Selection</h4>
+
+<p>The next step is to select the predictor variables to be used in the model.</p>
+
+<h5>
+<a name="31-corelated-predictors" class="anchor" href="#31-corelated-predictors"><span class="octicon octicon-link"></span></a>3.1 Corelated Predictors</h5>
+
+<p>We now check for Corelated predictors in the data set. If two variables are highly correlated they will impart nearly exactly the same information to the regression model. Including both variables will result in a weak model by infusing the model with noise. </p>
+
+<pre><code>library(caret)
+set.seed(1016)
+in_train &lt;- createDataPartition(input_data$classe, p=0.70, list=FALSE)
+training &lt;- input_data[in_train,]
+validation &lt;- input_data[-in_train,]
+</code></pre>
+
+<p>The following code examines the correlation coefficient. In this model, the Pearson correlation coefficient was chosen to be 0.99 (Indicating a very high level of correlation)</p>
+
+<pre><code>M &lt;- abs(cor(training[,-53]))
+diag(M) &lt;- 0
+which(M &gt; 0.99,arr.ind=T)
+</code></pre>
+
+<h5>
+<a name="32-pca" class="anchor" href="#32-pca"><span class="octicon octicon-link"></span></a>3.2 PCA</h5>
+
+<p>There are variables in the data set which have a high corelation coefficient. PCA can be used to reduce the number of variables. We can set the cutoff for the cumulative percent of variance to be retained by PCA to 0.99.</p>
+
+<pre><code>preProc=preProcess(training[,-53],method="pca",thresh=.99)
+pca_train=predict(preProc,training[,-53])
+pca_validation &lt;- predict(preProc, validation[-53])
+</code></pre>
+
+<p>This reduces the number of predictors in the training set from 53 to 36.</p>
+
+<h4>
+<a name="40-predictive-model" class="anchor" href="#40-predictive-model"><span class="octicon octicon-link"></span></a>4.0 Predictive Model</h4>
+
+<p>For building the predictive model, we use the Random Forest algorithm. </p>
+
+<pre><code>library(randomForest)
+model_rf = randomForest(training$classe~., data=pca_train, ntree = 2048)
+model_rf
+</code></pre>
+
+<p>Using cross validation, the accuracy of the model can be checked. </p>
+
+<pre><code>confusionMatrix(validation$classe, predict(model_rf, pca_validation))
+</code></pre>
+
+<p>The model has an accuracy of <code>0.982</code>. </p>
+
+<h4>
+<a name="50-conclusion" class="anchor" href="#50-conclusion"><span class="octicon octicon-link"></span></a>5.0 Conclusion</h4>
+
+<p>Now that we have a model, we can use it to predict the exercise quality over the test data set. We can do this with the following code.</p>
+
+<pre><code>test_data &lt;- test_data[, names(test_data) %in% names(input_data)]
+pca_test &lt;- predict(preProc, test_data)
+predicted_results &lt;- predict(model_rf, pca_test)
+</code></pre>
+
+<h4>
+<a name="60-references" class="anchor" href="#60-references"><span class="octicon octicon-link"></span></a>6.0 References</h4>
+
+<ol>
+<li>Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.</li>
+</ol>
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="owner">
+      <p><a href="https://github.com/ajammala" class="avatar"><img src="https://avatars0.githubusercontent.com/u/7338730?v=2&amp;s=60" width="48" height="48"></a> <a href="https://github.com/ajammala">ajammala</a> maintains <a href="https://github.com/ajammala/MachineLearning">Machinelearning</a></p>
+
+
+      </div>
+      <div class="creds">
+        <small>This page generated using <a href="http://pages.github.com/">GitHub Pages</a><br>theme by <a href="https://twitter.com/jonrohan/">Jon Rohan</a></small>
+      </div>
+    </footer>
+  </div>
+  <div class="current-section">
+    <a href="#top">Scroll to top</a>
+    <a href="https://github.com/ajammala/MachineLearning/tarball/master" class="tar">tar</a><a href="https://github.com/ajammala/MachineLearning/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
+    <p class="name"></p>
+  </div>
+
+  
+</body>
+</html>
